@@ -662,7 +662,7 @@ tabs. NKEYS should be 1 or 2."
 
 (defun xsort-tab-select-visible-nth-tab (&optional tab-index)
   (interactive "p")
-  (switch-to-buffer (nth (1- tab-index) xsort-tab-visible-buffers)))
+  (switch-to-buffer (nth (1- tab-index) (xsort-tab-visible-tabs))))
 
 (defun xsort-tab-select-visible-tab ()
   (interactive)
