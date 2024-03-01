@@ -450,7 +450,8 @@ When the current buffer is a hidden buffer, return nil."
              (buffer-index -1))
         (xsort-tab-update-tabs
          ;; Don't sort tabs if using xsort-tab commands.
-         (unless (string-prefix-p "xsort-tab-" (prin1-to-string last-command))
+         (unless (or (string-prefix-p "xsort-tab-" (prin1-to-string last-command))
+                     (string-prefix-p "xsort-tab-" (prin1-to-string this-command)))
            (setq xsort-tab-visible-buffers (xsort-tab-get-buffer-list)))
 
          (setq tabs-and-remain (xsort-tab-visible-tabs-and-remain-num))
