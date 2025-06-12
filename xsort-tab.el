@@ -220,7 +220,8 @@ When BUFFER is nil, use current buffer."
   (xsort-tab-update-list)
 
   ;; Add update hook.
-  (add-hook 'buffer-list-update-hook #'xsort-tab-update-list))
+  (add-hook 'buffer-list-update-hook #'xsort-tab-update-list)
+  (setq xsort-tab-mode t))
 
 (defun xsort-tab-create-window ()
   ;; Split top window.
