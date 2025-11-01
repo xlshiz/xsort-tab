@@ -499,14 +499,18 @@ When the current buffer is a hidden buffer, return nil."
   (propertize
    (format "%s"
            (let* ((bufname (buffer-name buf))
-                  (ellipsis "..."))
+                  (ellipsis "...")
+                  (modified-str ""))
              ;; We need remove space in web page title.
              (when (xsort-tab-is-eaf-browser-buffer-p buf)
                (setq bufname (replace-regexp-in-string "\\s-" "" bufname)))
 
+             (if (and (buffer-modified-p buf)
+                      (not (eq buf current-buffer)))
+               (setq modified-str "*"))
              (if (> (length bufname) xsort-tab-name-max-length)
-                 (format "%s%s" (substring bufname 0 (- xsort-tab-name-max-length (length ellipsis))) ellipsis)
-               (format "%s " bufname))))
+                 (format "%s%s%s" (substring bufname 0 (- xsort-tab-name-max-length (length ellipsis))) modified-str ellipsis)
+               (format "%s%s " bufname modified-str))))
    'face
    (if (eq buf current-buffer)
        'xsort-tab-current-tab-face
