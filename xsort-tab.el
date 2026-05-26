@@ -160,7 +160,6 @@
   "A function that returns project root for current buffer.")
 
 
-(defvar-local toki-tabs/buffer-group nil)
 (defun xsort-tab-buffer-group (&optional buffer)
   "Return the group name of BUFFER.
 When BUFFER is nil, use current buffer."
@@ -174,15 +173,6 @@ When BUFFER is nil, use current buffer."
                  (string-prefix-p common-name-prefix name))
                '("*Backtrace" "*scratch" "*Messages"))
       "*Common*")
-     ;; ((setq group
-     ;;        (or (buffer-local-value 'toki-tabs/buffer-group buffer)
-     ;;            (with-current-buffer buffer
-     ;;              (setq toki-tabs/buffer-group
-     ;;                    (when-let ((project
-     ;;                                (funcall xsort-tab-project-root-function)))
-     ;;                      (expand-file-name project))))))
-     ;;  group)
-     ;; ((eq (aref name 0) ?*) "*Common*")
      (t "*Others*"))))
 
 (defun xsort-tab-self-buffer ()
