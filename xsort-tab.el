@@ -118,7 +118,7 @@
 (defvar-local xsort-tab-buffer-freq 0
   "Used frequency of current buffer.")
 
-(defvar xsort-tab-visible-buffer-limit 4
+(defvar xsort-tab-visible-buffer-limit 8
   "Max number of visible buffers in a group.")
 
 (defvar xsort-tab-ace-state nil
