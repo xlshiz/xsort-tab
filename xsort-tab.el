@@ -156,7 +156,7 @@
 
 (defvar xsort-tab-project-root-function
   (lambda ()
-    (when-let ((project (project-current nil))) (cdr project)))
+    (when-let* ((project (project-current nil))) (cdr project)))
   "A function that returns project root for current buffer.")
 
 
