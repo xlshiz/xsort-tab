@@ -105,6 +105,12 @@
 (defconst xsort-tab-propertized-separator
   (propertize xsort-tab-separator 'face 'xsort-tab-separator-face))
 
+(defvar xsort-tab-mouse-map
+  (let ((km (make-sparse-keymap)))
+    (define-key km [mouse-1] #'xsort-tab-mouse-click)
+    km)
+  "Keymap for mouse clicks on xsort-tab tabs.")
+
 (defvar xsort-tab-mode-map
   (let ((km (make-sparse-keymap)))
     km)
@@ -416,75 +422,75 @@ When the current buffer is a hidden buffer, return nil."
      ))
 
 (defun xsort-tab-update-list ()
-  (let ((current-buffer (window-buffer)))
-    (cond
-     ;; Erase xsort-tab content if current buffer is xsort-tab buffer.
-     ((string-equal xsort-tab-buffer-name (buffer-name current-buffer))
-      (xsort-tab-update-tabs))
-     ;; Display tabs if current-buffer is normal buffer.
-     (t
-      ;; Debug usage.
-      ;; (with-current-buffer (get-buffer-create "xsort-tab-debug")
-      ;;   (goto-char (point-max))
-      ;;   (insert (format "**** %s %s\n"
-      ;;                   last-command
-      ;;                   (buffer-name current-buffer))))
+  (let* ((current-buffer (window-buffer))
+         (is-tab-buffer (string-equal xsort-tab-buffer-name (buffer-name current-buffer)))
+         (normal-win (unless is-tab-buffer
+                       (selected-window))))
+    (when is-tab-buffer
+      (cl-dolist (w (window-list))
+        (unless (eq w xsort-tab-window)
+          (setq normal-win w)
+          (cl-return)))
+      (unless normal-win
+        (xsort-tab-update-tabs)
+        (cl-return-from xsort-tab-update-list)))
+    (when normal-win
+      (setq current-buffer (window-buffer normal-win)))
 
-      (let* ((current-tab-start-column 0)
-             (current-tab-end-column 0)
-             (tab-window (get-buffer-window (xsort-tab-self-buffer)))
-             tabs-and-remain
-             tabs
-             num
-             found-current-tab
-             tab
-             (buffer-index -1))
-        (xsort-tab-update-tabs
-         ;; Don't sort tabs if using xsort-tab commands.
-         (unless (or (string-prefix-p "xsort-tab-" (prin1-to-string last-command))
-                     (string-prefix-p "xsort-tab-" (prin1-to-string this-command)))
-           (setq xsort-tab-visible-buffers (xsort-tab-get-buffer-list)))
+    (let* ((current-tab-start-column 0)
+           (current-tab-end-column 0)
+           (tab-window (get-buffer-window (xsort-tab-self-buffer)))
+           tabs-and-remain
+           tabs
+           num
+           found-current-tab
+           tab
+           (buffer-index -1))
+      (xsort-tab-update-tabs
+       ;; Don't sort tabs if using xsort-tab commands.
+       (unless (or (string-prefix-p "xsort-tab-" (prin1-to-string last-command))
+                   (string-prefix-p "xsort-tab-" (prin1-to-string this-command)))
+         (setq xsort-tab-visible-buffers (xsort-tab-get-buffer-list)))
 
-         (setq tabs-and-remain (xsort-tab-visible-tabs-and-remain-num))
-         (setq tabs (car tabs-and-remain))
-         (setq num (cdr tabs-and-remain))
-         (dolist (buf tabs)
-           ;; Insert tab.
-           (setq buffer-index (+ buffer-index 1))
-           (setq tab (xsort-tab-get-tab-name buf current-buffer buffer-index))
-           (if (or (not xsort-tab-ace-state) (>= buffer-index (length xsort-tab-ace-strs)))
-               (insert "  ")
-             (let ((show-numbers xsort-tab-ace-strs))
-               (insert (propertize (format "%-2s" (nth buffer-index show-numbers)) 'face 'xsort-tab-ace-keys-face))))
-           (insert tab)
-           (insert xsort-tab-propertized-separator)
+       (setq tabs-and-remain (xsort-tab-visible-tabs-and-remain-num))
+       (setq tabs (car tabs-and-remain))
+       (setq num (cdr tabs-and-remain))
+       (dolist (buf tabs)
+         ;; Insert tab.
+         (setq buffer-index (+ buffer-index 1))
+         (setq tab (xsort-tab-get-tab-name buf current-buffer buffer-index))
+         (if (or (not xsort-tab-ace-state) (>= buffer-index (length xsort-tab-ace-strs)))
+             (insert "  ")
+           (let ((show-numbers xsort-tab-ace-strs))
+             (insert (propertize (format "%-2s" (nth buffer-index show-numbers)) 'face 'xsort-tab-ace-keys-face))))
+         (insert tab)
+         (insert xsort-tab-propertized-separator)
 
-           ;; Calculate the current tab column.
-           (unless found-current-tab
-             (when (eq buf current-buffer)
-               (setq found-current-tab t)
-               (setq current-tab-start-column current-tab-end-column))
-             (setq current-tab-end-column (+ current-tab-end-column (length tab) (length xsort-tab-separator)))))
+         ;; Calculate the current tab column.
+         (unless found-current-tab
+           (when (eq buf current-buffer)
+             (setq found-current-tab t)
+             (setq current-tab-start-column current-tab-end-column))
+           (setq current-tab-end-column (+ current-tab-end-column (length tab) (length xsort-tab-separator)))))
 
-         ;; Show hide buffer at left when current buffer is match hidden rule.
-         (when (and (not found-current-tab) (xsort-tab-if-show-tab-p current-buffer))
-           (insert " ")
-           (insert (xsort-tab-get-tab-name current-buffer current-buffer))
-           (insert " ")
-           (insert xsort-tab-propertized-separator))
+       ;; Show hide buffer at left when current buffer is match hidden rule.
+       (when (and (not found-current-tab) (xsort-tab-if-show-tab-p current-buffer))
+         (insert " ")
+         (insert (xsort-tab-get-tab-name current-buffer current-buffer))
+         (insert " ")
+         (insert xsort-tab-propertized-separator))
 
-         (when (and num (> num 0))
-           (insert (propertize (format " +%s.. " num) 'face 'xsort-tab-ace-keys-face))
-           (insert xsort-tab-propertized-separator))
-         ;; Make tab always visible.
-         (when tab-window
-           (with-selected-window tab-window
-             (cond ((> current-tab-end-column (+ (window-hscroll) (window-width)))
-                    (scroll-left (+ (- current-tab-end-column (window-hscroll) (window-width)) (/ (window-width) 2))))
-                   ((< current-tab-start-column (window-hscroll))
-                    (set-window-hscroll tab-window current-tab-start-column))
-                   )))))))))
-
+       (when (and num (> num 0))
+         (insert (propertize (format " +%s.. " num) 'face 'xsort-tab-ace-keys-face))
+         (insert xsort-tab-propertized-separator))
+       ;; Make tab always visible.
+       (when tab-window
+         (with-selected-window tab-window
+           (cond ((> current-tab-end-column (+ (window-hscroll) (window-width)))
+                  (scroll-left (+ (- current-tab-end-column (window-hscroll) (window-width)) (/ (window-width) 2))))
+                 ((< current-tab-start-column (window-hscroll))
+                  (set-window-hscroll tab-window current-tab-start-column))
+                 )))))))
 (defun xsort-tab-get-tab-name (buf current-buffer &optional buffer-index)
   (propertize
    (format "%s"
@@ -504,7 +510,10 @@ When the current buffer is a hidden buffer, return nil."
    'face
    (if (eq buf current-buffer)
        'xsort-tab-current-tab-face
-     'xsort-tab-other-tab-face)))
+     'xsort-tab-other-tab-face)
+   'mouse-face 'highlight
+   'local-map xsort-tab-mouse-map
+   'xsort-tab-buffer buf))
 
 (defun xsort-tab-get-index ()
   (cl-position (window-buffer) (xsort-tab-visible-tabs) :test #'eq))
@@ -664,6 +673,19 @@ tabs. NKEYS should be 1 or 2."
 (defun xsort-tab-select-visible-nth-tab (&optional tab-index)
   (interactive "p")
   (switch-to-buffer (nth (1- tab-index) (xsort-tab-visible-tabs))))
+
+(defun xsort-tab-mouse-click (event)
+  "Switch to buffer at mouse click EVENT."
+  (interactive "e")
+  (let* ((pos (event-start event))
+         (buffer (get-text-property (posn-point pos) 'xsort-tab-buffer)))
+    (when (and buffer (buffer-live-p buffer))
+      (let ((win (or (and xsort-tab-window
+                          (get-mru-window nil nil xsort-tab-window))
+                     (car (window-list)))))
+        (when win
+          (select-window win)
+          (switch-to-buffer buffer))))))
 
 (defun xsort-tab-select-visible-tab ()
   (interactive)
