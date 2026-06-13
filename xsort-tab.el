@@ -146,7 +146,7 @@
   "Do not sort these buffers")
 
 (defvar xsort-tab-hide-modes '(magit-status-mode magit-process-mode magit-diff-mode
-                               magit-log-mode magit-status-mode)
+                               magit-log-mode)
   "Do not sort these modes")
 
 (defvar xsort-tab-hide-whitelist '("*scratch" "*Messages"))
@@ -452,7 +452,7 @@ When the current buffer is a hidden buffer, return nil."
            ;; Insert tab.
            (setq buffer-index (+ buffer-index 1))
            (setq tab (xsort-tab-get-tab-name buf current-buffer buffer-index))
-           (if (or (not xsort-tab-ace-state) (> buffer-index (length xsort-tab-ace-strs)))
+           (if (or (not xsort-tab-ace-state) (>= buffer-index (length xsort-tab-ace-strs)))
                (insert "  ")
              (let ((show-numbers xsort-tab-ace-strs))
                (insert (propertize (format "%-2s" (nth buffer-index show-numbers)) 'face 'xsort-tab-ace-keys-face))))
